@@ -2,7 +2,7 @@
   "name": "mokapot",
   "version": "1.0.1",
   "description": "DRY, reusable, composable test resources.",
-  "main": "index.js",
+  "main": "build/mokapot.js",
   "repository": {
     "type": "git",
     "url": "git@github.com:luuuis/mokapot.git",
@@ -10,10 +10,11 @@
   },
   "scripts": {
     "prepare": "tsc",
+    "clean": "rimraf build",
     "build": "tsc",
     "start": "ts-node src/mokapot.ts",
     "test": "mocha -r ts-node/register src/**/*.test.ts",
-    "release": "standard-version"
+    "release": "npm run clean && npm run build && standard-version"
   },
   "keywords": [
     "mocha",
@@ -40,6 +41,7 @@
     "mocha": "^8.2.1",
     "prettier": "^2.2.1",
     "pretty-quick": "^3.1.0",
+    "rimraf": "^3.0.2",
     "sinon": "^9.2.4",
     "standard-version": "^9.1.0",
     "ts-node": "^9.1.1",

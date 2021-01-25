@@ -4,6 +4,9 @@ build/
 # Created by https://www.toptal.com/developers/gitignore/api/node,macos
 # Edit at https://www.toptal.com/developers/gitignore?templates=node,macos
 
+yarn.lock
+package-lock.json
+
 ### macOS ###
 # General
 .DS_Store
@@ -11,7 +14,8 @@ build/
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
+
 
 # Thumbnails
 ._*

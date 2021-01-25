@@ -1,8 +1,8 @@
 # mokapot.js
 
-![](assets/noun_Moka%20Pot_101129.png)
+![](https://raw.githubusercontent.com/luuuis/mokapot/master/assets/noun_Moka%20Pot_101129.png)
 
-DRY, reusable, composable test resources.
+DRY, reusable and composable test resources for Mocha.
 
 ```ecmascript 6
 import * as mokapot from './mokapot'

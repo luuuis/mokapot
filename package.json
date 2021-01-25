@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "description": "DRY, reusable, composable test resources.",
   "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:luuuis/mokapot.git",
+    "homepage": "https://github.com/luuuis/mokapot"
+  },
   "scripts": {
     "prepare": "tsc",
     "build": "tsc",

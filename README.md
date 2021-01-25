@@ -22,4 +22,4 @@ describe('server test', function () {
 });
 ```
 
-<sub>Moka Pot icon <a href="https://thenounproject.com/term/moka-pot/101129/">created by Marvin Wilhelm from the Noun Project</a></sub>
+<sub>Moka Pot icon <a href="https://thenounproject.com/term/moka-pot/101129/">created by Marvin Wilhelm for the Noun Project</a></sub>

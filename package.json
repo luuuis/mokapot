@@ -1,6 +1,6 @@
 {
   "name": "mokapot",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "DRY, reusable, composable test resources.",
   "main": "index.js",
   "repository": {

@@ -5,7 +5,7 @@
 DRY, reusable and composable test resources for Mocha.
 
 ```ecmascript 6
-import * as mokapot from './mokapot'
+import * as mokapot from 'mokapot'
 
 describe('server test', function () {
   const createServer = mokapot.resource<Server>(async function* () {

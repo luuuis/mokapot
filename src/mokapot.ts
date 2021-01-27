@@ -34,8 +34,8 @@ export function resource<A>(
 export function resourceSync<A>(
   gen: () => Generator<A, void, undefined>
 ): ResourceGeneratorCreate<A> {
-  return async function* () {
-    for await (const v of gen()) {
+  return async function* (this: Mocha.Context) {
+    for await (const v of gen.call(this)) {
       yield v;
     }
   };
@@ -50,8 +50,8 @@ export function hookInto<A>(
   let generator: ResourceGenerator<A>;
   let resource: A;
 
-  before(async function () {
-    generator = createGen();
+  before(async function (this: Mocha.Context) {
+    generator = createGen.call(this);
 
     // pull the first value
     const first = await generator.next();

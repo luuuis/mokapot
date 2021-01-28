@@ -27,7 +27,7 @@ describe("mokapot", function () {
       it("should run in the BEFORE context", function () {
         assert.equal(
           title(),
-          `"before all" hook for "should run in the BEFORE context"`
+          `"before all" hook: beforeFn for "should run in the BEFORE context"`
         );
       });
 
@@ -69,6 +69,17 @@ describe("mokapot", function () {
       });
     });
 
+    describe("#before with name", function () {
+      const title = mokapot.before("NAME", mochaTestTitle);
+
+      it("should run in the BEFORE context", function () {
+        assert.equal(
+          title(),
+          '"before all" hook: NAME for "should run in the BEFORE context"'
+        );
+      });
+    });
+
     describe("#beforeEach", function () {
       const context = mokapot.beforeEach(mochaTestTitle);
       const number = mokapot.beforeEach(asyncNaturalNumber);
@@ -86,7 +97,7 @@ describe("mokapot", function () {
       it("should run in the BEFORE_EACH context", function () {
         assert.equal(
           context(),
-          '"before each" hook for "should run in the BEFORE_EACH context"'
+          '"before each" hook: beforeFn for "should run in the BEFORE_EACH context"'
         );
       });
 
@@ -125,6 +136,17 @@ describe("mokapot", function () {
         });
       });
     });
+
+    describe("#beforeEach with name", function () {
+      const title = mokapot.beforeEach("THE_NAME", mochaTestTitle);
+
+      it("should run in the BEFORE_EACH context", function () {
+        assert.equal(
+          title(),
+          '"before each" hook: THE_NAME for "should run in the BEFORE_EACH context"'
+        );
+      });
+    });
   });
 
   describe("#resourceSync", function () {
@@ -146,7 +168,7 @@ describe("mokapot", function () {
       it("should run in the BEFORE context", function () {
         assert.equal(
           title(),
-          '"before all" hook for "should run in the BEFORE context"'
+          '"before all" hook: beforeFn for "should run in the BEFORE context"'
         );
       });
 
@@ -178,8 +200,19 @@ describe("mokapot", function () {
       it("should run in the BEFORE_EACH context", function () {
         assert.equal(
           title(),
-          '"before each" hook for "should run in the BEFORE_EACH context"'
+          '"before each" hook: beforeFn for "should run in the BEFORE_EACH context"'
         );
+      });
+
+      describe("#beforeEach with name", function () {
+        const title = mokapot.beforeEach("THE_NAME", mochaTestTitle);
+
+        it("should run in the BEFORE_EACH context", function () {
+          assert.equal(
+            title(),
+            '"before each" hook: THE_NAME for "should run in the BEFORE_EACH context"'
+          );
+        });
       });
     });
   });

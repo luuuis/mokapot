@@ -4,60 +4,113 @@
 export type ResourceGenerator<A> = AsyncGenerator<A, void, void>;
 
 /**
- * Async generator function for setting up and tearing down
- * a resource.
- */
-export type ResourceGeneratorCreate<A> = () => ResourceGenerator<A>;
-
-/**
- * Handle to a resource that can be used during a test run.
- */
-export type Resource<A> = () => A;
-
-/**
- * Smart constructor to avoid having to write out the type.
+ * Gets the current value of a resource.
  *
- * @param gen async generator function for creating and destroying resources
+ * @throws Error if called outside a test
  */
-export function resource<A>(
-  gen: ResourceGeneratorCreate<A>
-): ResourceGeneratorCreate<A> {
-  // wat!
-  return gen;
-}
+export type Current<A> = () => A;
 
 /**
- * Lifts a synchronous generator into a resource.
- *
- * @param gen generator function for creating and destroying resources
+ * NodeJS error-first callback.
  */
-export function resourceSync<A>(
-  gen: () => Generator<A, void, undefined>
-): ResourceGeneratorCreate<A> {
-  return async function* (this: Mocha.Context) {
-    for await (const v of gen.call(this)) {
-      yield v;
-    }
+export type NodeCB<A> = (e: Error | undefined | null, a: A) => void;
+
+export class Resource<A> {
+  /**
+   * Creates a Resource from an async generator.
+   *
+   * @param genA generates an A (should yield exactly once)
+   */
+  static gen = function <A>(
+    genA: (this: Mocha.Context) => ResourceGenerator<A>
+  ): Resource<A> {
+    return new Resource<A>(genA);
   };
+
+  /**
+   * Creates a Resource from a pair of Promise-returning functions.
+   *
+   * @param setUp asynchronously sets up an A
+   * @param tearDown asynchronously tears down an A
+   */
+  static async = function <A>(
+    setUp: (this: Mocha.Context) => Promise<A>,
+    tearDown?: (this: Mocha.Context, a: A) => Promise<void>
+  ): Resource<A> {
+    return Resource.gen<A>(async function* (this: Mocha.Context) {
+      const a: A = await setUp.call(this);
+      yield a;
+      if (tearDown) {
+        await tearDown.call(this, a);
+      }
+    });
+  };
+
+  /**
+   * Creates a resource from a pair of synchronous functions.
+   *
+   * @param setUp synchronously sets up an A
+   * @param tearDown synchronously tears down an A
+   */
+  static sync = function <A>(
+    setUp: (this: Mocha.Context) => A,
+    tearDown?: (this: Mocha.Context, a: A) => void
+  ): Resource<A> {
+    return Resource.gen<A>(async function* (this: Mocha.Context) {
+      const a: A = await new Promise((res) => res(setUp.call(this)));
+      yield a;
+      if (tearDown) {
+        await new Promise((res) => res(tearDown.call(this, a)));
+      }
+    });
+  };
+
+  /**
+   * Creates a resource from a pair of NodeJS callbacks.
+   *
+   * @param setUp asynchronously sets up an A
+   * @param tearDown asynchronously tears down an A
+   */
+  static node = function <A>(
+    setUp: (this: Mocha.Context, cb: NodeCB<A>) => void,
+    tearDown?: (this: Mocha.Context, a: A, cb: NodeCB<void>) => void
+  ): Resource<A> {
+    return Resource.gen<A>(async function* (this: Mocha.Context) {
+      const a: A = await new Promise((resolve, reject) => {
+        setUp.call(this, (err, a) => (err ? reject(err) : resolve(a)));
+      });
+
+      yield a;
+      if (tearDown) {
+        await new Promise<void>((resolve, reject) => {
+          tearDown.call(this, a, (err) => (err ? reject(err) : resolve()));
+        });
+      }
+    });
+  };
+
+  private constructor(
+    readonly genA: (this: Mocha.Context) => ResourceGenerator<A>
+  ) {}
 }
 
 export function hookInto<A>(
   beforeHook: Mocha.HookFunction,
   afterHook: Mocha.HookFunction,
-  optName: string | ResourceGeneratorCreate<A>,
-  optGen?: ResourceGeneratorCreate<A>
-): Resource<A> {
-  const [createGen, name] =
-    typeof optName !== "undefined" && typeof optGen !== "undefined"
-      ? [optGen, optName as string]
-      : [optName as ResourceGeneratorCreate<A>, undefined];
+  optName: string | Resource<A>,
+  optRes?: Resource<A>
+): Current<A> {
+  const [resource, name]: [Resource<A>, string?] =
+    optName !== undefined && optRes !== undefined
+      ? [optRes, optName as string]
+      : [optName as Resource<A>, undefined];
 
   let hasValue = false;
   let generator: ResourceGenerator<A>;
-  let resource: A;
+  let value: A;
 
   const beforeFn = async function (this: Mocha.Context) {
-    generator = createGen.call(this);
+    generator = resource.genA.call(this);
 
     // pull the first value
     const first = await generator.next();
@@ -65,7 +118,7 @@ export function hookInto<A>(
       throw Error("Generator function should yield exactly once");
     }
 
-    resource = first.value;
+    value = first.value;
     hasValue = true;
   };
 
@@ -89,10 +142,12 @@ export function hookInto<A>(
 
   return () => {
     if (!hasValue) {
-      throw Error("Generator function should yield exactly once");
+      throw Error(
+        "Resource is not in scope of a test. Are you within an it() execution?"
+      );
     }
 
-    return resource;
+    return value;
   };
 }
 
@@ -100,56 +155,66 @@ export function hookInto<A>(
  * Hooks the given resource generator into Mocha `before` and `after` to create
  * and destroy a resource, respectively.
  *
- * @param gen async generator function for creating and destroying resources
- * @see mokapot#resource
+ * @param res async generator function for creating and destroying resources
+ * @see Resource
  */
-export function before<A>(gen: ResourceGeneratorCreate<A>): Resource<A>;
+export function before<A>(res: Resource<A>): Current<A>;
 
 /**
  * Hooks the given resource generator into Mocha `before` and `after` to create
  * and destroy a resource, respectively.
  *
  * @param name test describe name
- * @param gen async generator function for creating and destroying resources
- * @see mokapot#resource
+ * @param res async generator function for creating and destroying resources
+ * @see Resource
  */
-export function before<A>(
-  name: string,
-  gen: ResourceGeneratorCreate<A>
-): Resource<A>;
+export function before<A>(name: string, res: Resource<A>): Current<A>;
 
 export function before<A>(
-  optName: string | ResourceGeneratorCreate<A>,
-  optGen?: ResourceGeneratorCreate<A>
-): Resource<A> {
-  return hookInto(global.before, global.after, optName, optGen);
+  optName: string | Resource<A>,
+  optRes?: Resource<A>
+): Current<A> {
+  return hookInto(global.before, global.after, optName, optRes);
 }
 
 /**
  * Hooks the given resource generator into Mocha `beforeEach` and `afterEach`
  * to create and destroy a resource, respectively.
  *
- * @param gen async generator function for creating and destroying resources
- * @see mokapot#resource
+ * @param res async generator function for creating and destroying resources
+ * @see Resource
  */
-export function beforeEach<A>(gen: ResourceGeneratorCreate<A>): Resource<A>;
+export function beforeEach<A>(res: Resource<A>): Current<A>;
 
 /**
  * Hooks the given resource generator into Mocha `beforeEach` and `afterEach`
  * to create and destroy a resource, respectively.
  *
  * @param name test describe name
- * @param gen async generator function for creating and destroying resources
- * @see mokapot#resource
+ * @param res async generator function for creating and destroying resources
+ * @see Resource
  */
-export function beforeEach<A>(
-  name: string,
-  gen: ResourceGeneratorCreate<A>
-): Resource<A>;
+export function beforeEach<A>(name: string, res: Resource<A>): Current<A>;
 
 export function beforeEach<A>(
-  optName: string | ResourceGeneratorCreate<A>,
-  optGen?: ResourceGeneratorCreate<A>
-): Resource<A> {
-  return hookInto(global.beforeEach, global.afterEach, optName, optGen);
+  optName: string | Resource<A>,
+  optRes?: Resource<A>
+): Current<A> {
+  return hookInto(global.beforeEach, global.afterEach, optName, optRes);
 }
+
+export const mokapot = {
+  // hooks
+  before,
+  beforeEach,
+
+  // resources
+  async: Resource.async,
+  sync: Resource.sync,
+  node: Resource.node,
+  gen: Resource.gen,
+
+  // plumbing:
+  Resource,
+  hookInto,
+};

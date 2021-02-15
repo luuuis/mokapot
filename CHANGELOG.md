@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.0.0](https://github.com/luuuis/mokapot/compare/v1.0.2...v2.0.0) (2021-02-15)
+
+### ⚠ BREAKING CHANGES
+
+- changes API to mokapot.async/sync/node/gen
+
+### Features
+
+- adds before(string,resource) and beforeEach(string,resource) ([976ff4e](https://github.com/luuuis/mokapot/commit/976ff4e378ecbfb0a0c06836dc8d34d8ea3c0e5d))
+- changes API to mokapot.async/sync/node/gen ([1513b8b](https://github.com/luuuis/mokapot/commit/1513b8be83523b8566c90f39e138b679721b59ea))
+
+### Bug Fixes
+
+- resources run in the right 'this' context ([0885c13](https://github.com/luuuis/mokapot/commit/0885c1358ed1ba28684c7e991324642c6728db6e))
+
 ### [1.0.2](https://github.com/luuuis/mokapot/compare/v1.0.1...v1.0.2) (2021-01-25)
 
 #### Bug Fixes
